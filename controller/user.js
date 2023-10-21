@@ -147,4 +147,4 @@ const deleteTask = async(req,res)=>{
 
 
 
-export {addUser,login ,createTaks, Update ,deleteTask , readTask}
+export {addUser,login ,createTaks, UpdateTask ,deleteTask , readTask}
