@@ -113,7 +113,7 @@ const readTask = async(req,res)=>{
 
 
 // // update task api 
-const Update = async(req,res)=>{
+const UpdateTask = async(req,res)=>{
 
     const taskModel = await task.findOne({userId : req.body.userId})
 
