@@ -370,7 +370,7 @@ const check = async (req,res) =>{
         key_id: process.env.key_id,
         key_secret: process.env.key_secret,
     });
-    const isValidSignature = instance.validateWebhookSignature(
+    const isValidSignature = Razorpay.validateWebhookSignature(
         JSON.stringify(body),
         webhookSignature,
         'Shub12345'
