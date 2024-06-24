@@ -9,6 +9,8 @@ import nodemailer from "nodemailer"
 import { randomBytes } from "crypto";
 import reviews from "../model/addreviews.js"
 import savepost from "../model/savepost.js"
+import Razorpay from 'razorpay';
+import axios from "axios"
 // In this api i am registering the user and creating the taks as well  we can make different collection also and pass the userId in that task collection and add the task details in that collection and CURD will perform using their userId
 const addUser = async (req, res) => {
 
@@ -270,7 +272,7 @@ const save_post = async (req, res) => {
                     }
                 }
             });
-            
+
         }
 
 
@@ -299,4 +301,103 @@ const save_post = async (req, res) => {
 
 }
 
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post }
+const generateSignature = (data, secret) => {
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(data);
+    return hmac.digest('hex');
+};
+
+// Function to verify payment verification signature
+const validatePaymentVerification = (requestData, signature, secret) => {
+    const { order_id, payment_id } = requestData;
+    const generatedSignature = generateSignature(`${order_id}|${payment_id}`, secret);
+    return generatedSignature === signature;
+};
+const instance = new Razorpay({
+    key_id: process.env.key_id,
+    key_secret: process.env.key_secret,
+});
+
+const create_ord = async (req, res) => {
+    const { amount, currency } = req.body;
+    try {
+        const keyId = process.env.key_id;
+        const keySecret = process.env.key_secret;
+
+        console.log('Key ID:', keyId);
+        console.log('Key Secret:', keySecret);
+
+        const response = await axios.post('https://api.razorpay.com/v1/orders', {
+            amount: amount * 100, // converting to paise
+            currency: currency,
+            payment_capture: 1,
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic cnpwX2xpdmVfSmxQVmNQVkFxbmdhYWw6UWZoTktCRVZ0NWpib0ZvSVFaUVFYakdN' //+ Buffer.from(`${keyId}:${keySecret}`).toString('base64')
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error creating order:', error.response ? error.response.data : error.message);
+        res.status(500).send('Error creating order');
+    }
+    
+};
+
+
+const verify_payment = async (req, res) => {
+    const { order_id, payment_id } = req.body;
+    console.log('order_id: ', order_id, payment_id);
+    const secret = process.env.razorpay_signature; // Load from environment variable
+    console.log('secret: ', secret);
+
+    // Validate the payment verification signature
+    const isValidSignature = validatePaymentVerification({ order_id, payment_id }, razorpay_signature, secret);
+
+    if (isValidSignature) {
+        // Payment is successful
+        res.status(200).json({ status: 'success', message: 'Payment verification successful' });
+    } else {
+        // Invalid signature
+        res.status(403).json({ status: 'error', message: 'Invalid signature' });
+    }
+}
+
+const check = async (req,res) =>{
+    const body = req.body;
+    const webhookSignature = req.headers['x-razorpay-signature'];
+  
+    // Verify webhook signature
+    const isValidSignature = instance.validateWebhookSignature(
+      JSON.stringify(body),
+      webhookSignature,
+      'Shub12345'
+    );
+  
+    if (isValidSignature) {
+      // Handle different event types from Razorpay
+      const eventType = body.event;
+      const payment = body.payload.payment.entity;
+  
+      if (eventType === 'payment.captured') {
+        // Payment successful, store payment details in your database
+        console.log('Payment captured:', payment);
+  
+        // Example: Store payment details in your database
+        // Implement your database logic here
+        // Example: Save payment details to MongoDB or MySQL
+  
+        res.status(200).send('Webhook received successfully');
+      } else {
+        // Handle other events if needed
+        res.status(200).send('Webhook received successfully');
+      }
+    } else {
+      // Invalid signature
+      res.status(400).send('Invalid webhook signature');
+    }
+}
+
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, create_ord,verify_payment, check}
