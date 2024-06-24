@@ -313,20 +313,16 @@ const validatePaymentVerification = (requestData, signature, secret) => {
     const generatedSignature = generateSignature(`${order_id}|${payment_id}`, secret);
     return generatedSignature === signature;
 };
-const instance = new Razorpay({
-    key_id: process.env.key_id,
-    key_secret: process.env.key_secret,
-});
 
 const create_ord = async (req, res) => {
     const { amount, currency } = req.body;
     try {
         const keyId = process.env.key_id;
         const keySecret = process.env.key_secret;
-
+        
         console.log('Key ID:', keyId);
         console.log('Key Secret:', keySecret);
-
+        
         const response = await axios.post('https://api.razorpay.com/v1/orders', {
             amount: amount * 100, // converting to paise
             currency: currency,
@@ -337,7 +333,7 @@ const create_ord = async (req, res) => {
                 'Authorization': 'Basic cnpwX2xpdmVfSmxQVmNQVkFxbmdhYWw6UWZoTktCRVZ0NWpib0ZvSVFaUVFYakdN' //+ Buffer.from(`${keyId}:${keySecret}`).toString('base64')
             }
         });
-
+        
         res.json(response.data);
     } catch (error) {
         console.error('Error creating order:', error.response ? error.response.data : error.message);
@@ -352,10 +348,10 @@ const verify_payment = async (req, res) => {
     console.log('order_id: ', order_id, payment_id);
     const secret = process.env.razorpay_signature; // Load from environment variable
     console.log('secret: ', secret);
-
+    
     // Validate the payment verification signature
     const isValidSignature = validatePaymentVerification({ order_id, payment_id }, razorpay_signature, secret);
-
+    
     if (isValidSignature) {
         // Payment is successful
         res.status(200).json({ status: 'success', message: 'Payment verification successful' });
@@ -368,12 +364,16 @@ const verify_payment = async (req, res) => {
 const check = async (req,res) =>{
     const body = req.body;
     const webhookSignature = req.headers['x-razorpay-signature'];
-  
+    
     // Verify webhook signature
+    const instance = new Razorpay({
+        key_id: process.env.key_id,
+        key_secret: process.env.key_secret,
+    });
     const isValidSignature = instance.validateWebhookSignature(
-      JSON.stringify(body),
-      webhookSignature,
-      'Shub12345'
+        JSON.stringify(body),
+        webhookSignature,
+        'Shub12345'
     );
   
     if (isValidSignature) {
