@@ -383,7 +383,7 @@ const check = async (req,res) =>{
       
       if (eventType === 'payment.captured') {
 
-        console.log("4",body);
+        console.log("4",JSON.stringify(body));
         // Payment successful, store payment details in your database
   
         // Example: Store payment details in your database
