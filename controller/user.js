@@ -363,9 +363,11 @@ const verify_payment = async (req, res) => {
 
 const check = async (req,res) =>{
     const body = req.body;
+
     console.log('body: ', body);
+
     const webhookSignature = req.headers['x-razorpay-signature'];
-    console.log('webhookSignature: ', webhookSignature);
+    
 
     const isValidSignature = Razorpay.validateWebhookSignature(
         JSON.stringify(body),
@@ -373,14 +375,14 @@ const check = async (req,res) =>{
         'Shub12345'
     );
   
-    console.log("klklklklkl");
+    
+    
     if (isValidSignature) {
-        console.log("kl");
       // Handle different event types from Razorpay
       const eventType = body.event;
-      console.log('eventType: ', eventType);
+      
       const payment = body.payload.payment.entity;
-      console.log('payment: ', payment);
+      
   
       if (eventType === 'payment.captured') {
         // Payment successful, store payment details in your database
