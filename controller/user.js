@@ -364,29 +364,29 @@ const verify_payment = async (req, res) => {
 const check = async (req,res) =>{
     const body = req.body;
 
-    console.log('body: ', body);
-
     const webhookSignature = req.headers['x-razorpay-signature'];
     
-
+    console.log("1");
     const isValidSignature = Razorpay.validateWebhookSignature(
         JSON.stringify(body),
         webhookSignature,
         'Shub12345'
     );
   
-    
+    console.log("2");
     
     if (isValidSignature) {
       // Handle different event types from Razorpay
       const eventType = body.event;
       
       const payment = body.payload.payment.entity;
+      console.log("3");
       
   
       if (eventType === 'payment.captured') {
+
+        console.log("4");
         // Payment successful, store payment details in your database
-        console.log('Payment captured:', payment);
   
         // Example: Store payment details in your database
         // Implement your database logic here
@@ -394,6 +394,7 @@ const check = async (req,res) =>{
   
         res.status(200).send('Webhook received successfully');
       } else {
+        console.log("5");
         // Handle other events if needed
         res.status(200).send('Webhook received successfully');
       }
