@@ -372,10 +372,14 @@ const check = async (req,res) =>{
         'Shub12345'
     );
   
+    console.log("klklklklkl");
     if (isValidSignature) {
+        console.log("kl");
       // Handle different event types from Razorpay
       const eventType = body.event;
-    //   const payment = body.payload.payment.entity;
+      console.log('eventType: ', eventType);
+      const payment = body.payload.payment.entity;
+      console.log('payment: ', payment);
   
       if (eventType === 'payment.captured') {
         // Payment successful, store payment details in your database
