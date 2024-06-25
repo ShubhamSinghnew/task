@@ -363,6 +363,7 @@ const verify_payment = async (req, res) => {
 
 const check = async (req,res) =>{
     const body = req.body;
+    console.log('body: ', body);
     const webhookSignature = req.headers['x-razorpay-signature'];
     console.log('webhookSignature: ', webhookSignature);
 
