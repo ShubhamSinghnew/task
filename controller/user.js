@@ -378,11 +378,9 @@ const check = async (req,res) =>{
     if (isValidSignature) {
       // Handle different event types from Razorpay
       const eventType = body.event;
-      
-      const payment = body.payload.payment.entity;
+    //   const payment = body.payload.payment.entity;
       console.log("3");
       
-  
       if (eventType === 'payment.captured') {
 
         console.log("4");
