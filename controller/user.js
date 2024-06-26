@@ -11,6 +11,7 @@ import reviews from "../model/addreviews.js"
 import savepost from "../model/savepost.js"
 import Razorpay from 'razorpay';
 import axios from "axios"
+import PaymentPlan from "../model/paymentPlan.js"
 // In this api i am registering the user and creating the taks as well  we can make different collection also and pass the userId in that task collection and add the task details in that collection and CURD will perform using their userId
 const addUser = async (req, res) => {
 
