@@ -5,7 +5,13 @@ import http from 'http';
 import "./db/conn.js";
 import user from "./router/user.js";
 import cors from "cors"
+import { Server } from 'socket.io';
+
+
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
 // io.on('connection', (socket) => {
 //   console.log('A user connected');
@@ -18,6 +24,10 @@ const app = express();
 //     console.log('Received data from client:', data);
 //   });
 // });
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 app.use(express.json());
 app.use(cors())
