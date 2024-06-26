@@ -337,7 +337,7 @@ const check = async (req, res) => {
             }
   
             const create = new PaymentPlan({
-              user_id: find._id, // Assuming user_id is an ObjectId reference to the User model
+              user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
               id: body.payload.payment.entity.id,
               amount: amount,
               currency: body.payload.payment.entity.currency,
@@ -348,6 +348,7 @@ const check = async (req, res) => {
             });
   
             await create.save();
+            io.to(find.user_id).emit(eventType, create);
           }
   
           console.log("4");
@@ -359,7 +360,7 @@ const check = async (req, res) => {
         }
   
         // Emit the event using io
-        io.emit(eventType);
+        // io.emit(eventType);
       } else {
         // Invalid signature
         res.status(400).send('Invalid webhook signature');

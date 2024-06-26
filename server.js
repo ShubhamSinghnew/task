@@ -13,22 +13,24 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// io.on('connection', (socket) => {
-//   console.log('A user connected');
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
-//   socket.on('disconnect', () => {
-//     console.log('User disconnected');
-//   });
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 
-//   socket.on('testEvent', (data) => {
-//     console.log('Received data from client:', data);
-//   });
-// });
+  socket.on('testEvent', (data) => {
+    console.log('Received data from client:', data);
+    // Example: Broadcast the received data to all connected clients
+    io.emit('testEventResponse', { message: 'Received your data!' });
+  });
+});
+
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
-
 app.use(express.json());
 app.use(cors())
 app.use(user);
