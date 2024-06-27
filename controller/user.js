@@ -148,7 +148,6 @@ const restPassword = async (req, res) => {
 
 const post_tution = async (req, res) => {
     const { user_id, post_title, auther, fees, city, state, address, subject, board, gender, phone } = req.body;
-
     const currentDate = new Date();
 
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -158,8 +157,23 @@ const post_tution = async (req, res) => {
     });
 
     try {
-        const newPost = new post({ post_id: Randomstring.generate(8), user_id, post_title, auther, post_time: formattedDate, fees, city, state, address, subject, board, gender, phone });
+        const newPost = new post({
+            post_id: Randomstring.generate(8),
+            user_id: user_id,
+            post_title: post_title,
+            auther, post_time: formattedDate,
+            fees: fees,
+            city: fees,
+            state: state,
+            address: address,
+            subject: subject,
+            board: board,
+            gender: gender,
+            phone: phone
+        });
+        io.emit(newPost)
         await newPost.save();
+
 
         return res.status(201).json({ message: 'Post created successfully', data: newPost });
     } catch (error) {
@@ -306,68 +320,68 @@ const check = async (req, res) => {
     const body = req.body;
     const webhookSignature = req.headers['x-razorpay-signature'];
     const io = req.io; // Access the io instance from the request
-  
+
     try {
-      console.log("1");
-      const isValidSignature = Razorpay.validateWebhookSignature(
-        JSON.stringify(body),
-        webhookSignature,
-        'Shub12345'
-      );
-  
-      console.log("2");
-  
-      if (isValidSignature) {
-        const eventType = body.event;
-        console.log("3");
-  
-        if (eventType === 'payment.captured') {
-          const find = await userModel.findOne({ phone: body.payload.payment.entity.contact });
-  
-          if (find) {
-            let plan;
-            const amount = body.payload.payment.entity.amount;
-  
-            if (amount === 200) {
-              plan = "A";
-            } else if (amount === 400) {
-              plan = "B";
-            } else if (amount === 600) {
-              plan = "C";
+        console.log("1");
+        const isValidSignature = Razorpay.validateWebhookSignature(
+            JSON.stringify(body),
+            webhookSignature,
+            'Shub12345'
+        );
+
+        console.log("2");
+
+        if (isValidSignature) {
+            const eventType = body.event;
+            console.log("3");
+
+            if (eventType === 'payment.captured') {
+                const find = await userModel.findOne({ phone: body.payload.payment.entity.contact });
+
+                if (find) {
+                    let plan;
+                    const amount = body.payload.payment.entity.amount;
+
+                    if (amount === 200) {
+                        plan = "A";
+                    } else if (amount === 400) {
+                        plan = "B";
+                    } else if (amount === 600) {
+                        plan = "C";
+                    }
+
+                    const create = new PaymentPlan({
+                        user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
+                        id: body.payload.payment.entity.id,
+                        amount: amount,
+                        currency: body.payload.payment.entity.currency,
+                        order_id: body.payload.payment.entity.order_id,
+                        vpa: body.payload.payment.entity.vpa,
+                        contact: body.payload.payment.entity.contact,
+                        plan: plan
+                    });
+                    console.log(create);
+                    await create.save();
+                    io.to(find.user_id).emit(eventType, create);
+                }
+
+                console.log("4");
+                res.status(200).send('Webhook received successfully');
+            } else {
+                console.log("5");
+                // Handle other events if needed
+                res.status(200).send('Webhook received successfully');
             }
-  
-            const create = new PaymentPlan({
-              user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
-              id: body.payload.payment.entity.id,
-              amount: amount,
-              currency: body.payload.payment.entity.currency,
-              order_id: body.payload.payment.entity.order_id,
-              vpa: body.payload.payment.entity.vpa,
-              contact: body.payload.payment.entity.contact,
-              plan: plan
-            });
-  
-            await create.save();
-            io.to(find.user_id).emit(eventType, create);
-          }
-  
-          console.log("4");
-          res.status(200).send('Webhook received successfully');
+
+            // Emit the event using io
+            // io.emit(eventType);
         } else {
-          console.log("5");
-          // Handle other events if needed
-          res.status(200).send('Webhook received successfully');
+            // Invalid signature
+            res.status(400).send('Invalid webhook signature');
         }
-  
-        // Emit the event using io
-        // io.emit(eventType);
-      } else {
-        // Invalid signature
-        res.status(400).send('Invalid webhook signature');
-      }
     } catch (error) {
-      console.error("Error processing webhook:", error);
-      res.status(500).send('Internal server error');
+        console.error("Error processing webhook:", error);
+        res.status(500).send('Internal server error');
     }
 };
 

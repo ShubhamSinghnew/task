@@ -1,40 +1,59 @@
 import { mongoose, model, Schema } from "mongoose"
 
 const postmodel = new mongoose.Schema({
-    user_id : {
+    post_id: {
         type: String,
         default: "",
     },
-    id: {
+    user_id: {
         type: String,
         default: "",
     },
-    amount: {
-        type: Number,
-        default: 0,
-    },
-    currency: {
+    post_title: {
         type: String,
         default: "",
     },
-    order_id: {
+    auther: {
         type: String,
         default: ""
     },
-    vpa: {
+    post_time: {
         type: String,
         default: null
     },
-    contact: {
+    fees: {
         type: String,
         default: ""
     },
-    plan: {
+    city: {
+        type: String,
+        default: ""
+    },
+    state: {
+        type: String,
+        default: ""
+    },
+    address: {
+        type: String,
+        default: ""
+    },
+    subject: {
+        type: String,
+        default: ""
+    },
+    board: {
+        type: String,
+        default: ""
+    },
+    gender : {
+        type: String,
+        default: ""
+    },
+    phone : {
         type: String,
         default: ""
     }
 
 })
-
 const post = new mongoose.model("post", postmodel)
 export default post
