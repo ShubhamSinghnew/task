@@ -337,6 +337,7 @@ const check = async (req, res) => {
 
             if (eventType === 'payment.captured') {
                 const find = await userModel.findOne({ phone: body.payload.payment.entity.contact });
+                console.log('find: ', find);
 
                 if (find) {
                     let plan;
