@@ -163,7 +163,7 @@ const post_tution = async (req, res) => {
             post_title: post_title,
             auther, post_time: formattedDate,
             fees: fees,
-            city: fees,
+            city: city,
             state: state,
             address: address,
             subject: subject,
@@ -363,7 +363,6 @@ const check = async (req, res) => {
                     });
                     console.log(create);
                     await create.save();
-                    io.to(find.user_id).emit(eventType, create);
                 }
 
                 console.log("4");
@@ -386,4 +385,17 @@ const check = async (req, res) => {
     }
 };
 
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check }
+const check_payment = async(req,res)=>{
+
+    const {user_id} = req.body;
+
+    const find = await PaymentPlan.findOne({user_id : user_id})
+
+    if(find){
+        return res.status(200).json({
+            status : 200,
+            data :  find,
+        })
+    }
+}
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment }
