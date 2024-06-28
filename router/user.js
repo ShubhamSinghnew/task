@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/api/addUser", addUser)
 router.post('/api/login', login)
-router.post('/api/post',verifyToken, post_tution)
+router.post('/api/post', post_tution)
 router.post('/api/addReviews',verifyToken, add_review)
 router.post('/api/allpost', get_post)
 router.post('/api/savepost',verifyToken, save_post)
