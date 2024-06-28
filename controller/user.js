@@ -518,7 +518,7 @@ const get_all_post = async (req, res) => {
         }));
 
         return res.status(200).json({
-            data: all_posts_with_reviews
+            data: all_posts_with_reviews.reverse()
         })
     } else {
         return res.status(200).json({
