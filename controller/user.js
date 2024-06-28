@@ -390,7 +390,7 @@ const check = async (req, res) => {
                     }
                     
                   
-                    if (amount === 2900) {
+                    if (amount === 3900) {
                         plan = "29RS for 1 Month";
                         from = getIndianTime(); // Set from date to current Indian Standard Time
                         to = calculateToDate(new Date(from), 1); // Set to date to 1 month from from date
