@@ -49,24 +49,62 @@ const addUser = async (req, res) => {
 
 //login api
 const login = async (req, res) => {
-    const { email, password } = req.body
+    const { email, password } = req.body;
     const authTokenPayload = {
         email: email,
         password: password
     };
-    const user = await userModel.findOne({ email: email })
-    if (!user) {
-        return res.status(400).json({ message: "user not found" })
-    } else {
-        const isPasswordMatch = await bcrypt.compare(password, user.password)
+
+    try {
+        const user = await userModel.findOne({ email: email });
+        if (!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        const check_plan = await PaymentPlan.findOne({ user_id: user.user_id });
+
+        let planActive = false;
+
+        function getIndianTime() {
+            // Create a new Date object for the current date and time
+            let now = new Date();
+        
+            // Get the time in UTC and add the offset for the Indian Standard Time (IST) zone (5 hours 30 minutes)
+            let istOffset = 5.5 * 60 * 60 * 1000; // Offset in milliseconds
+            let istTime = new Date(now.getTime() + istOffset);
+        
+            return istTime;
+        }
+
+        if (check_plan && check_plan.plan_details.length > 0) {
+            const toTime = new Date(check_plan.plan_details[0].to);
+            const currentTime = getIndianTime();
+            planActive = toTime >= currentTime; // Check if plan is still active
+        }
+
         if (!isPasswordMatch) {
-            return res.status(400).json({ message: "Incorrect password" })
+            return res.status(400).json({ message: "Incorrect password" });
         } else {
             const encryptedCode = await jwtsign(authTokenPayload);
-            return res.status(200).json({ data: { user: user.name, user_id: user.user_id, email: user.email, authcode: encryptedCode, type: user.type }, message: `user ${user.name} login successfully !!` });
+            return res.status(200).json({
+                data: {
+                    user: user.name,
+                    user_id: user.user_id,
+                    email: user.email,
+                    authcode: encryptedCode,
+                    type: user.type
+                },
+                plan_active: planActive,
+                message: `User ${user.name} logged in successfully!`
+            });
         }
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 const forgetPassword = async (req, res) => {
     const { email } = req.body;
@@ -144,10 +182,8 @@ const restPassword = async (req, res) => {
 
 }
 
-// post 
-
 const post_tution = async (req, res) => {
-    const { user_id, post_title, auther, fees, city, state, address, subject, board, gender, phone } = req.body;
+    const { post_title, auther, fees, city, state, address, subject, board, gender, phone } = req.body;
     const currentDate = new Date();
 
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -159,7 +195,6 @@ const post_tution = async (req, res) => {
     try {
         const newPost = new post({
             post_id: Randomstring.generate(8),
-            user_id: user_id,
             post_title: post_title,
             auther, post_time: formattedDate,
             fees: fees,
@@ -171,7 +206,6 @@ const post_tution = async (req, res) => {
             gender: gender,
             phone: phone
         });
-        io.emit(newPost)
         await newPost.save();
 
 
@@ -181,7 +215,6 @@ const post_tution = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 }
-
 
 const add_review = async (req, res) => {
 
@@ -265,8 +298,6 @@ const get_post = async (req, res) => {
     }
 };
 
-
-
 const save_post = async (req, res) => {
     const { post_id, user_id } = req.body
 
@@ -319,53 +350,111 @@ const save_post = async (req, res) => {
 const check = async (req, res) => {
     const body = req.body;
     const webhookSignature = req.headers['x-razorpay-signature'];
-    const io = req.io; // Access the io instance from the request
-
     try {
-        console.log("1");
+
         const isValidSignature = Razorpay.validateWebhookSignature(
             JSON.stringify(body),
             webhookSignature,
             'Shub12345'
         );
 
-        console.log("2");
-
         if (isValidSignature) {
             const eventType = body.event;
-            console.log("3");
+
 
             if (eventType === 'payment.captured') {
+
                 const find = await userModel.findOne({ phone: body.payload.payment.entity.contact });
-                console.log('find: ', find);
 
                 if (find) {
-                    let plan;
                     const amount = body.payload.payment.entity.amount;
 
-                    if (amount === 200) {
-                        plan = "A";
-                    } else if (amount === 400) {
-                        plan = "B";
-                    } else if (amount === 600) {
-                        plan = "C";
+                    let plan;
+                    let from;
+                    let to;
+                    function getIndianTime() {
+                        // Create a new Date object for the current date and time
+                        let now = new Date();
+                    
+                        // Get the time in UTC and add the offset for the Indian Standard Time (IST) zone (5 hours 30 minutes)
+                        let istOffset = 5.5 * 60 * 60 * 1000; // Offset in milliseconds
+                        let istTime = new Date(now.getTime() + istOffset);
+                    
+                        return istTime;
+                    }
+                    
+                    function calculateToDate(fromDate, monthsToAdd) {
+                        let to = new Date(fromDate);
+                        to.setMonth(to.getMonth() + monthsToAdd);
+                        return to;
+                    }
+                    
+                  
+                    if (amount === 2900) {
+                        plan = "29RS for 1 Month";
+                        from = getIndianTime(); // Set from date to current Indian Standard Time
+                        to = calculateToDate(new Date(from), 1); // Set to date to 1 month from from date
+                    } else if (amount === 9900) {
+                        plan = "99RS for 3 Month";
+                        from = getIndianTime(); // Set from date to current Indian Standard Time
+                        to = calculateToDate(new Date(from), 3); // Set to date to 3 months from from date
+                    } else if (amount === 14900) {
+                        plan = "149RS for 6 Month";
+                        from = getIndianTime(); // Set from date to current Indian Standard Time
+                        to = calculateToDate(new Date(from), 6); // Set to date to 6 months from from date
+                    } else if (amount === 24900) {
+                        plan = "249RS for 12 Month";
+                        from = getIndianTime(); // Set from date to current Indian Standard Time
+                        to = calculateToDate(new Date(from), 12); // Set to date to 12 months from from date
+                    }
+                    
+                   
+
+                    const newPlanDetail = {
+                        from: from,
+                        to: to,
+                        plan: plan
+                    };
+
+
+                    const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
+
+                    if (check_plan.length > 0) {
+                        if (check_plan.plan_details.length > 0) {
+                            const update_payment = await PaymentPlan.updateOne(
+                                {
+                                    user_id: find.user_id
+                                },
+                                {
+                                    $push: {
+                                        plan_details: {
+                                            $each: [newPlanDetail],
+                                            $position: 0
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    } else {
+                        plan_details.push(newPlanDetail);
+                        const create = new PaymentPlan({
+                            user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
+                            id: body.payload.payment.entity.id,
+                            amount: amount,
+                            currency: body.payload.payment.entity.currency,
+                            order_id: body.payload.payment.entity.order_id,
+                            vpa: body.payload.payment.entity.vpa,
+                            contact: body.payload.payment.entity.contact,
+                            plan_details: plan_details
+                        });
+
+                        await create.save();
                     }
 
-                    const create = new PaymentPlan({
-                        user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
-                        id: body.payload.payment.entity.id,
-                        amount: amount,
-                        currency: body.payload.payment.entity.currency,
-                        order_id: body.payload.payment.entity.order_id,
-                        vpa: body.payload.payment.entity.vpa,
-                        contact: body.payload.payment.entity.contact,
-                        plan: plan
-                    });
                     console.log(create);
-                    await create.save();
+
                 }
 
-                console.log("4");
                 res.status(200).send('Webhook received successfully');
             } else {
                 console.log("5");
@@ -385,17 +474,58 @@ const check = async (req, res) => {
     }
 };
 
-const check_payment = async(req,res)=>{
+const check_payment = async (req, res) => {
 
-    const {user_id} = req.body;
+    const { user_id } = req.body;
 
-    const find = await PaymentPlan.findOne({user_id : user_id})
+    const find = await PaymentPlan.findOne({ user_id: user_id })
 
-    if(find){
+    if (find) {
         return res.status(200).json({
-            status : 200,
-            data :  find,
+            status: 200,
+            data: find,
+        })
+    } else {
+        return res.send(false)
+    }
+}
+
+const get_all_post = async (req, res) => {
+    const all_posts = await post.find();
+
+    if (all_posts.length > 0) {
+
+        const all_posts_with_reviews = await Promise.all(all_posts.map(async (ele) => {
+            const reviews_data = await reviews.findOne({ post_id: ele.post_id });
+            let reviewsArray = [];
+
+            if (reviews_data) {
+                reviewsArray = await Promise.all(reviews_data.reviews_array.map(async (review) => {
+                    const user = await userModel.findOne({ user_id: review.user_id });
+                    return {
+                        review: review.review,
+                        user_id: review.user_id,
+                        user_name: user ? user.name : 'Unknown'
+                    };
+                }));
+            }
+
+
+            return {
+                ...ele._doc,
+                reviews: reviewsArray
+            };
+        }));
+
+        return res.status(200).json({
+            data: all_posts_with_reviews
+        })
+    } else {
+        return res.status(200).json({
+            message: "data not found"
         })
     }
 }
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment }
+
+
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post }

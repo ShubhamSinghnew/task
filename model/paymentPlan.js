@@ -1,7 +1,7 @@
 import { mongoose, model, Schema } from "mongoose"
 
 const plan = new mongoose.Schema({
-    user_id : {
+    user_id: {
         type: String,
         default: "",
     },
@@ -29,10 +29,23 @@ const plan = new mongoose.Schema({
         type: String,
         default: ""
     },
-    plan: {
-        type: String,
-        default: ""
-    }
+    plan_details: [
+        {
+            plan: {
+                type: String,
+                default: ""
+            },
+            from : {
+                type: String,
+                default: ""
+            },
+            to : {
+                type: String,
+                default: ""
+            }
+        }
+
+    ]
 
 })
 const paymentPlan = new mongoose.model("paymentPlan", plan)
