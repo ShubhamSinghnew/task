@@ -455,7 +455,20 @@ const check = async (req, res) => {
 
                 }
 
-                res.status(200).send('Webhook received successfully');
+                res.send(`
+                    <html>
+                        <body>
+                            <p>Payment was successful! You will be redirected shortly...</p>
+                            <script>
+                                setTimeout(function() {
+                                    window.location.href = 'https://hometuitionsadda.com/';
+                                }, 5000); // 5 seconds
+                            </script>
+                        </body>
+                    </html>
+                `);
+
+                // res.status(200).send('Webhook received successfully');
             } else {
                 console.log("5");
                 // Handle other events if needed
