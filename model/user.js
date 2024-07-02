@@ -25,6 +25,10 @@ const  userModel = new mongoose.Schema({
     phone:{
          type:String,
             default:""
+    },
+    count:{
+         type:Number,
+            default:0
     }
 })
 

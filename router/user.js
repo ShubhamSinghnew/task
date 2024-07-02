@@ -1,5 +1,5 @@
 import express from 'express';
-import {addUser, add_review, check,  check_payment,  get_all_post,  get_post, login, post_tution, save_post } from "../controller/user.js"
+import {addUser, add_count, add_review, check,  check_payment,  get_all_post,  get_post, login, post_tution, save_post } from "../controller/user.js"
 import { verifyToken } from '../helper.js';
 const router = express.Router();   
 
@@ -12,6 +12,7 @@ router.post('/api/savepost',verifyToken, save_post)
 router.post('/api/check', check)
 router.post('/api/check_payment', check_payment)
 router.post('/api/get_all_post', get_all_post)
+router.post('/api/update_count', add_count)
 // router.post('/api/forget', forgetPassword);
 // router.post('/api/reset', restPassword);
 

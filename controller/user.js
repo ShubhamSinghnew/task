@@ -69,11 +69,11 @@ const login = async (req, res) => {
         function getIndianTime() {
             // Create a new Date object for the current date and time
             let now = new Date();
-        
+
             // Get the time in UTC and add the offset for the Indian Standard Time (IST) zone (5 hours 30 minutes)
             let istOffset = 5.5 * 60 * 60 * 1000; // Offset in milliseconds
             let istTime = new Date(now.getTime() + istOffset);
-        
+
             return istTime;
         }
 
@@ -82,6 +82,15 @@ const login = async (req, res) => {
             const currentTime = getIndianTime();
             planActive = toTime >= currentTime; // Check if plan is still active
         }
+
+
+        // if(user.count >= 3){
+        //     return req.status(200).json({
+        //         data : "",
+        //         status : 200,
+        //         message : "You riched your free trial limit!"
+        //     })
+        // }
 
         if (!isPasswordMatch) {
             return res.status(400).json({ message: "Incorrect password" });
@@ -93,7 +102,8 @@ const login = async (req, res) => {
                     user_id: user.user_id,
                     email: user.email,
                     authcode: encryptedCode,
-                    type: user.type
+                    type: user.type,
+                    count: user.count
                 },
                 plan_active: planActive,
                 message: `User ${user.name} logged in successfully!`
@@ -375,21 +385,21 @@ const check = async (req, res) => {
                     function getIndianTime() {
                         // Create a new Date object for the current date and time
                         let now = new Date();
-                    
+
                         // Get the time in UTC and add the offset for the Indian Standard Time (IST) zone (5 hours 30 minutes)
                         let istOffset = 5.5 * 60 * 60 * 1000; // Offset in milliseconds
                         let istTime = new Date(now.getTime() + istOffset);
-                    
+
                         return istTime;
                     }
-                    
+
                     function calculateToDate(fromDate, monthsToAdd) {
                         let to = new Date(fromDate);
                         to.setMonth(to.getMonth() + monthsToAdd);
                         return to;
                     }
-                    
-                  
+
+
                     if (amount === 3900) {
                         plan = "29RS for 1 Month";
                         from = getIndianTime(); // Set from date to current Indian Standard Time
@@ -407,8 +417,8 @@ const check = async (req, res) => {
                         from = getIndianTime(); // Set from date to current Indian Standard Time
                         to = calculateToDate(new Date(from), 12); // Set to date to 12 months from from date
                     }
-                    
-                   
+
+
 
                     const newPlanDetail = {
                         from: from,
@@ -540,5 +550,37 @@ const get_all_post = async (req, res) => {
     }
 }
 
+const add_count = async (req, res) => {
+    const { user_id } = req.body
 
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post }
+    const user = await userModel.findOne({ user_id: user_id });
+    if (!user) {
+        return res.status(400).json({ message: "User not found" });
+    }
+    const check_plan = await PaymentPlan.findOne({ user_id: user_id });
+    if (check_plan && check_plan.plan_details.length > 0) {
+        const toTime = new Date(check_plan.plan_details[0].to);
+        const currentTime = getIndianTime();
+        planActive = toTime >= currentTime; // Check if plan is still active
+        if (planActive) {
+            const update = await userModel.updateOne(
+                { email: email },  // Replace with the filter criteria
+                { $set: { count: 0 } }  // Replace with the update operations
+            );
+        }
+    }
+
+    const update = await userModel.updateOne(
+        { user_id: user_id },  // Replace with the filter criteria
+        { $set: { count: user.count + 1 } }  // Replace with the update operations
+    );
+    const updatedUser = await userModel.findOne({ user_id: user_id });
+
+    if (update) {
+        return res.status(200).json({
+            data: updatedUser.count
+        })
+    }
+
+}
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post, add_count }
