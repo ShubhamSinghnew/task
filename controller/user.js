@@ -427,26 +427,26 @@ const check = async (req, res) => {
                     };
 
 
-                    const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
+                    // const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
 
-                    if (check_plan.length > 0) {
-                        if (check_plan.plan_details.length > 0) {
-                            const update_payment = await PaymentPlan.updateOne(
-                                {
-                                    user_id: find.user_id
-                                },
-                                {
-                                    $push: {
-                                        plan_details: {
-                                            $each: [newPlanDetail],
-                                            $position: 0
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                    } else {
-                        plan_details.push(newPlanDetail);
+                    // if (check_plan.length > 0) {
+                    //     if (check_plan.plan_details.length > 0) {
+                    //         const update_payment = await PaymentPlan.updateOne(
+                    //             {
+                    //                 user_id: find.user_id
+                    //             },
+                    //             {
+                    //                 $push: {
+                    //                     plan_details: {
+                    //                         $each: [newPlanDetail],
+                    //                         $position: 0
+                    //                     }
+                    //                 }
+                    //             }
+                    //         )
+                    //     }
+                    // } else {
+                    //     plan_details.push(newPlanDetail);
                         const create = new PaymentPlan({
                             user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
                             id: body.payload.payment.entity.id,
@@ -455,11 +455,11 @@ const check = async (req, res) => {
                             order_id: body.payload.payment.entity.order_id,
                             vpa: body.payload.payment.entity.vpa,
                             contact: body.payload.payment.entity.contact,
-                            plan_details: plan_details
+                            plan_details: newPlanDetail
                         });
 
                         await create.save();
-                    }
+                    
 
                     console.log(create);
 
