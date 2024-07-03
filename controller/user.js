@@ -29,7 +29,7 @@ const addUser = async (req, res) => {
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const add = new userModel({
-            userId: Randomstring.generate(8),
+            user_id: Randomstring.generate(8),
             email,
             password: hashedPassword,
             name,
