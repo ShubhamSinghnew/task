@@ -12,6 +12,7 @@ import savepost from "../model/savepost.js"
 import Razorpay from 'razorpay';
 import axios from "axios"
 import PaymentPlan from "../model/paymentPlan.js"
+import {Country} from "../model/city_state_country.js"
 // In this api i am registering the user and creating the taks as well  we can make different collection also and pass the userId in that task collection and add the task details in that collection and CURD will perform using their userId
 const addUser = async (req, res) => {
 
@@ -419,7 +420,6 @@ const check = async (req, res) => {
                     }
 
 
-
                     const newPlanDetail = {
                         from: from,
                         to: to,
@@ -583,4 +583,29 @@ const add_count = async (req, res) => {
     }
 
 }
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post, add_count }
+
+const get_state_city = async (req, res) => {
+    try {
+        const data = await Country.findOne({ id: 101 });
+        if (data) {
+            const find_state = data.states;
+            const find_cities = data.states.reduce((acc, state) => {
+                return acc.concat(state.cities);
+            }, []);
+
+            return res.status(200).json({
+                data: { state: find_state, city: find_cities }
+            });
+        } else {
+            return res.status(404).json({
+                error: 'Country not found'
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching state and city data:', error);
+        return res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+};
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post, add_count,get_state_city }
