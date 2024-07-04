@@ -12,7 +12,7 @@ import savepost from "../model/savepost.js"
 import Razorpay from 'razorpay';
 import axios from "axios"
 import PaymentPlan from "../model/paymentPlan.js"
-import {Country} from "../model/city_state_country.js"
+import { Country } from "../model/city_state_country.js"
 // In this api i am registering the user and creating the taks as well  we can make different collection also and pass the userId in that task collection and add the task details in that collection and CURD will perform using their userId
 const addUser = async (req, res) => {
 
@@ -427,26 +427,30 @@ const check = async (req, res) => {
                     };
 
 
-                    // const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
+                    const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
 
-                    // if (check_plan.length > 0) {
-                    //     if (check_plan.plan_details.length > 0) {
-                    //         const update_payment = await PaymentPlan.updateOne(
-                    //             {
-                    //                 user_id: find.user_id
-                    //             },
-                    //             {
-                    //                 $push: {
-                    //                     plan_details: {
-                    //                         $each: [newPlanDetail],
-                    //                         $position: 0
-                    //                     }
-                    //                 }
-                    //             }
-                    //         )
-                    //     }
-                    // } else {
-                    //     plan_details.push(newPlanDetail);
+                    if (check_plan.length > 0) {
+                        if (check_plan.plan_details.length > 0) {
+                            const update_payment = await PaymentPlan.updateOne(
+                                {
+                                    user_id: find.user_id
+                                },
+                                {
+                                    $push: {
+                                        plan_details: {
+                                            $each: [newPlanDetail],
+                                            $position: 0
+                                        }
+                                    }
+                                }
+                            )
+                            const update = await userModel.updateOne(
+                                { email: find.email },  // Replace with the filter criteria
+                                { $set: { count: 0 } }  // Replace with the update operations
+                            );
+                        }
+                    } else {
+                        plan_details.push(newPlanDetail);
                         const create = new PaymentPlan({
                             user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
                             id: body.payload.payment.entity.id,
@@ -459,13 +463,31 @@ const check = async (req, res) => {
                         });
 
                         await create.save();
-                    
+                        const update = await userModel.updateOne(
+                            { email: find.email },  // Replace with the filter criteria
+                            { $set: { count: 0 } }  // Replace with the update operations
+                        );
 
-                    console.log(create);
+                        await update.save()
+
+                    }
+                    if (check_plan && check_plan.plan_details.length > 0) {
+                        const toTime = new Date(check_plan.plan_details[0].to);
+                        const currentTime = getIndianTime();
+                        planActive = toTime >= currentTime; // Check if plan is still active
+                        if (planActive) {
+                            const update = await userModel.updateOne(
+                                { email: find.email },  // Replace with the filter criteria
+                                { $set: { count: 0 } }  // Replace with the update operations
+                            );
+    
+                            await update.save()
+                        }
+                    }
 
                 }
 
-                res.send(`
+                return res.send(`
                     <html>
                         <body>
                             <p>Payment was successful! You will be redirected shortly...</p>
@@ -557,18 +579,18 @@ const add_count = async (req, res) => {
     if (!user) {
         return res.status(400).json({ message: "User not found" });
     }
-    const check_plan = await PaymentPlan.findOne({ user_id: user_id });
-    if (check_plan && check_plan.plan_details.length > 0) {
-        const toTime = new Date(check_plan.plan_details[0].to);
-        const currentTime = getIndianTime();
-        planActive = toTime >= currentTime; // Check if plan is still active
-        if (planActive) {
-            const update = await userModel.updateOne(
-                { email: email },  // Replace with the filter criteria
-                { $set: { count: 0 } }  // Replace with the update operations
-            );
-        }
-    }
+    // const check_plan = await PaymentPlan.findOne({ user_id: user_id });
+    // if (check_plan && check_plan.plan_details.length > 0) {
+    //     const toTime = new Date(check_plan.plan_details[0].to);
+    //     const currentTime = getIndianTime();
+    //     planActive = toTime >= currentTime; // Check if plan is still active
+    //     if (planActive) {
+    //         const update = await userModel.updateOne(
+    //             { email: email },  // Replace with the filter criteria
+    //             { $set: { count: 0 } }  // Replace with the update operations
+    //         );
+    //     }
+    // }
 
     const update = await userModel.updateOne(
         { user_id: user_id },  // Replace with the filter criteria
@@ -608,4 +630,4 @@ const get_state_city = async (req, res) => {
         });
     }
 };
-export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post, add_count,get_state_city }
+export { addUser, login, forgetPassword, restPassword, post_tution, add_review, get_post, save_post, check, check_payment, get_all_post, add_count, get_state_city }

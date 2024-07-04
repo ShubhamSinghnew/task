@@ -27,8 +27,8 @@ const  userModel = new mongoose.Schema({
             default:""
     },
     count:{
-         type:Number,
-            default:0
+        type:Number,
+        default:0
     }
 })
 
