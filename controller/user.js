@@ -427,10 +427,10 @@ const check = async (req, res) => {
                     };
 
 
-                    const check_plan = await PaymentPlan.findOne({ user_id: find.user_id })
+                    const check_plan = await PaymentPlan.findOne({ user_id: find.user_id });
 
-                    if (check_plan.length > 0) {
-                        if (check_plan.plan_details.length > 0) {
+                    if (check_plan) {
+                        if (check_plan.plan_details && check_plan.plan_details.length > 0) {
                             const update_payment = await PaymentPlan.updateOne(
                                 {
                                     user_id: find.user_id
@@ -443,14 +443,34 @@ const check = async (req, res) => {
                                         }
                                     }
                                 }
-                            )
+                            );
+
                             const update = await userModel.updateOne(
                                 { email: find.email },  // Replace with the filter criteria
                                 { $set: { count: 0 } }  // Replace with the update operations
                             );
+                        } else {
+                            // Handle the case where check_plan exists but plan_details is empty or undefined
+                            // For example, you might want to add the newPlanDetail to an empty or non-existent plan_details array
+                            await PaymentPlan.updateOne(
+                                {
+                                    user_id: find.user_id
+                                },
+                                {
+                                    $set: {
+                                        plan_details: [newPlanDetail]
+                                    }
+                                }
+                            );
+
+                            const update = await userModel.updateOne(
+                                { email: find.email },
+                                { $set: { count: 0 } }
+                            );
+                            await update.save()
                         }
                     } else {
-                        plan_details.push(newPlanDetail);
+                        // If check_plan is null, create a new PaymentPlan
                         const create = new PaymentPlan({
                             user_id: find.user_id, // Assuming user_id is an ObjectId reference to the User model
                             id: body.payload.payment.entity.id,
@@ -459,18 +479,19 @@ const check = async (req, res) => {
                             order_id: body.payload.payment.entity.order_id,
                             vpa: body.payload.payment.entity.vpa,
                             contact: body.payload.payment.entity.contact,
-                            plan_details: newPlanDetail
+                            plan_details: [newPlanDetail] // plan_details should be an array
                         });
 
                         await create.save();
+
                         const update = await userModel.updateOne(
                             { email: find.email },  // Replace with the filter criteria
                             { $set: { count: 0 } }  // Replace with the update operations
                         );
 
                         await update.save()
-
                     }
+
                     if (check_plan && check_plan.plan_details.length > 0) {
                         const toTime = new Date(check_plan.plan_details[0].to);
                         const currentTime = getIndianTime();
@@ -480,7 +501,7 @@ const check = async (req, res) => {
                                 { email: find.email },  // Replace with the filter criteria
                                 { $set: { count: 0 } }  // Replace with the update operations
                             );
-    
+
                             await update.save()
                         }
                     }
