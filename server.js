@@ -6,6 +6,7 @@ import "./db/conn.js";
 import user from "./router/user.js";
 import cors from 'cors';
 import { Server } from 'socket.io';
+import { sendMessage } from './controller/chatmode.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +26,11 @@ io.on('connection', (socket) => {
     const { user_id } = data;
     socket.join(user_id); // Join a room named by user_id
     console.log(`User with ID ${user_id} registered with socket ${socket.id}`);
+  });
+
+  socket.on('send_message', async (data) => {
+    const savedMessage = await sendMessage(data);
+    io.emit('receive_message', savedMessage);
   });
 
   socket.on('disconnect', () => {
