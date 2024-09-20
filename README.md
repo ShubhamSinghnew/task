@@ -20,23 +20,23 @@
 }'
 # 3) get task apis by filter dueDate , status,  priority
    a) by priority curl --location 'localhost:8900/task/getTaskByFilter?priority=1' \
---data ''
+    --data ''
 
   b) by status curl --location 'localhost:8900/task/getTaskByFilter?status=pending' \
---data ''
+    --data ''
 
  c) curl --location 'localhost:8900/task/getTaskByFilter?dueDate=2024-09-29' \
---data ''
+    --data ''
 
 # 4) get task apis by id  curl --location 'localhost:8900/task/getTaksById/66ed697411b72872d2f3c308' \
---data ''
+    --data ''
 
 # 5) get task apis of pagination curl --location 'localhost:8900/task/getAllTask?page=1&limit=2' \
---data ''
+    --data ''
 
 # 6) update task by id curl --location --request PUT 'localhost:8900/task/updateTask/66ed697411b72872d2f3c308' \
 --header 'Content-Type: application/json' \
---data '{
+    --data '{
     "title": "new task 1.1",
     "description": "this is my new task 1.1",
     "dueDate": "2024-09-30",
