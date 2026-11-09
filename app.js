@@ -6,7 +6,7 @@ import taskRouter from './routes/taskRouter.js';
 dotenv.config();
 
 // Connect to the database
-connectDB();
+//connectDB();
 const app = express()
 
 // Middleware
