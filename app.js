@@ -98,3 +98,6 @@ console.log(PORT)
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+
+// MONGO_URI = "mongodb+srv://singhshubham67867:Shub12345@cluster0.r2qhc.mongodb.net/"
