@@ -1,6 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -171,17 +172,21 @@
       color: #856404;
     }
 
-    .Done, .Delivered {
+    .Done,
+    .Delivered {
       background: #d4edda;
       color: #155724;
     }
 
-    .Rejected, .Cancelled {
+    .Rejected,
+    .Cancelled {
       background: #f8d7da;
       color: #721c24;
     }
 
-    .Accepted, .Preparing, .Out-for-Delivery {
+    .Accepted,
+    .Preparing,
+    .Out-for-Delivery {
       background: #d1ecf1;
       color: #0c5460;
     }
@@ -240,12 +245,70 @@
       color: white;
     }
 
-    .empty, .loading {
+    .empty,
+    .loading {
       background: white;
       padding: 30px;
       border-radius: 10px;
       text-align: center;
       color: #777;
+    }
+
+    /* OTP Popup */
+
+    .otp-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      padding: 20px;
+    }
+
+    .otp-box {
+      background: white;
+      width: 100%;
+      max-width: 380px;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .otp-box h2 {
+      margin-bottom: 12px;
+    }
+
+    .otp-box p {
+      margin-bottom: 20px;
+      color: #666;
+    }
+
+    .otp-box input {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 22px;
+      letter-spacing: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .otp-box button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #ffb900;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #resendOtp {
+      background: #eee;
     }
 
     @media (max-width: 600px) {
@@ -266,15 +329,56 @@
 
 <body>
 
+  <!-- OTP Popup -->
+  <div id="otpPopup" class="otp-overlay">
+
+    <div class="otp-box">
+
+      <h2>Admin Verification</h2>
+
+      <p id="otpMessage">Sending OTP to your email...</p>
+
+      <form id="otpForm">
+
+        <input
+          type="text"
+          id="otpInput"
+          placeholder="Enter 6 digit OTP"
+          maxlength="6"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          autocomplete="one-time-code"
+          required
+        >
+
+        <button type="submit" id="verifyBtn">
+          Verify OTP
+        </button>
+
+      </form>
+
+      <button type="button" id="resendOtp">
+        Resend OTP
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- Header -->
   <header>
     <h2>A-1 Frankie Admin</h2>
-    <button class="refresh-btn" id="refreshBtn">Refresh Orders</button>
+
+    <button class="refresh-btn" id="refreshBtn">
+      Refresh Orders
+    </button>
   </header>
 
   <main class="container">
 
     <!-- Stats -->
     <section class="stats">
+
       <div class="stat-card">
         <h3>Total Orders</h3>
         <p id="totalOrders">0</p>
@@ -294,45 +398,211 @@
         <h3>Rejected Orders</h3>
         <p id="rejectedOrders">0</p>
       </div>
+
     </section>
 
     <!-- Date Filter -->
     <section class="date-filter">
-      <label for="orderDate">Filter Orders By Date:</label>
+
+      <label for="orderDate">
+        Filter Orders By Date:
+      </label>
 
       <input type="date" id="orderDate">
 
-      <button id="filterDate" class="date-btn">Search</button>
+      <button id="filterDate" class="date-btn">
+        Search
+      </button>
 
-      <button id="allDates" class="all-btn">All Dates</button>
+      <button id="allDates" class="all-btn">
+        All Dates
+      </button>
+
     </section>
 
     <!-- Status Filter -->
     <section class="filters">
-      <button class="filter-btn active" data-status="All">All</button>
-      <button class="filter-btn" data-status="Pending">Pending</button>
-      <button class="filter-btn" data-status="Done">Done</button>
-      <button class="filter-btn" data-status="Rejected">Rejected</button>
+
+      <button class="filter-btn active" data-status="All">
+        All
+      </button>
+
+      <button class="filter-btn" data-status="Pending">
+        Pending
+      </button>
+
+      <button class="filter-btn" data-status="Done">
+        Done
+      </button>
+
+      <button class="filter-btn" data-status="Rejected">
+        Rejected
+      </button>
+
     </section>
 
     <!-- Orders -->
     <section class="orders" id="ordersContainer">
-      <div class="loading">Loading orders...</div>
+
+      <div class="loading">
+        Verify OTP to load orders.
+      </div>
+
     </section>
 
   </main>
 
   <script>
+
     const API_ORDERS = "/api/orders";
 
     let allOrders = [];
     let currentFilter = "All";
+    let adminToken = null;
 
     const $ = (id) => document.getElementById(id);
 
-    // Load orders from backend
-    async function loadOrders(date = "") {
+
+    // =====================================
+    // SEND OTP
+    // =====================================
+
+    async function sendOTP() {
+
+      const message = $("otpMessage");
+      const resendBtn = $("resendOtp");
+
       try {
+
+        resendBtn.disabled = true;
+        message.textContent = "Sending OTP to your email...";
+
+        const response = await fetch("/api/admin/send-otp", {
+          method: "POST"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(
+            result.message || "Unable to send OTP."
+          );
+        }
+
+        message.textContent =
+          "OTP sent successfully. Please check your email.";
+
+        $("otpInput").focus();
+
+      } catch (error) {
+
+        console.error("Send OTP Error:", error);
+
+        message.textContent = error.message;
+
+      } finally {
+
+        resendBtn.disabled = false;
+
+      }
+
+    }
+
+
+    // =====================================
+    // VERIFY OTP
+    // =====================================
+
+    $("otpForm").addEventListener("submit", async (e) => {
+
+      e.preventDefault();
+
+      const otp = $("otpInput").value.trim();
+      const verifyBtn = $("verifyBtn");
+      const message = $("otpMessage");
+
+      if (!/^\d{6}$/.test(otp)) {
+        message.textContent = "Please enter a valid 6 digit OTP.";
+        return;
+      }
+
+      try {
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = "Verifying...";
+
+        const response = await fetch("/api/admin/verify-otp", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({ otp })
+
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(
+            result.message || "OTP verification failed."
+          );
+        }
+
+        // Store JWT in JavaScript memory
+        adminToken = result.token;
+
+        // Close OTP popup
+        $("otpPopup").style.display = "none";
+
+        // Load orders only after successful OTP verification
+        await loadOrders($("orderDate").value);
+
+      } catch (error) {
+
+        console.error("Verify OTP Error:", error);
+
+        message.textContent = error.message;
+
+        $("otpInput").value = "";
+        $("otpInput").focus();
+
+      } finally {
+
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "Verify OTP";
+
+      }
+
+    });
+
+
+    // =====================================
+    // RESEND OTP
+    // =====================================
+
+    $("resendOtp").addEventListener("click", () => {
+
+      $("otpInput").value = "";
+      sendOTP();
+
+    });
+
+
+    // =====================================
+    // LOAD ORDERS
+    // =====================================
+
+    async function loadOrders(date = "") {
+
+      if (!adminToken) {
+        return;
+      }
+
+      try {
+
         $("ordersContainer").innerHTML =
           '<div class="loading">Loading orders...</div>';
 
@@ -342,11 +612,34 @@
           url += `?date=${encodeURIComponent(date)}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+
+          headers: {
+            Authorization: `Bearer ${adminToken}`
+          }
+
+        });
+
         const result = await response.json();
 
+        if (response.status === 401 || response.status === 403) {
+
+          adminToken = null;
+
+          $("otpPopup").style.display = "flex";
+
+          $("otpMessage").textContent =
+            "Session expired. Please verify OTP again.";
+
+          await sendOTP();
+
+          return;
+        }
+
         if (!response.ok || !result.success) {
-          throw new Error(result.message || "Unable to fetch orders");
+          throw new Error(
+            result.message || "Unable to fetch orders."
+          );
         }
 
         allOrders = result.data || [];
@@ -355,15 +648,23 @@
         renderOrders();
 
       } catch (error) {
+
         console.error("Load Orders Error:", error);
 
         $("ordersContainer").innerHTML =
           '<div class="empty">Unable to load orders. Please try again.</div>';
+
       }
+
     }
 
-    // Update statistics
+
+    // =====================================
+    // UPDATE STATS
+    // =====================================
+
     function updateStats() {
+
       $("totalOrders").textContent = allOrders.length;
 
       $("pendingOrders").textContent =
@@ -374,91 +675,149 @@
 
       $("rejectedOrders").textContent =
         allOrders.filter(order => order.status === "Rejected").length;
+
     }
 
-    // Render orders
+
+    // =====================================
+    // RENDER ORDERS
+    // =====================================
+
     function renderOrders() {
+
       const container = $("ordersContainer");
 
       let filteredOrders = allOrders;
 
       if (currentFilter !== "All") {
+
         filteredOrders = allOrders.filter(
           order => order.status === currentFilter
         );
+
       }
 
       if (!filteredOrders.length) {
+
         container.innerHTML =
           '<div class="empty">No orders found.</div>';
+
         return;
+
       }
 
       container.innerHTML = filteredOrders.map(order => {
-        const orderDate = new Date(order.createdAt).toLocaleString("en-IN");
+
+        const orderDate = new Date(order.createdAt)
+          .toLocaleString("en-IN");
 
         const itemsHTML = (order.items || []).map(item => `
+
           <div class="item-row">
+
             <span>
               ${escapeHTML(item.productName)} × ${item.quantity}
             </span>
-            <strong>₹${Number(item.itemTotal || 0).toFixed(2)}</strong>
+
+            <strong>
+              ₹${Number(item.itemTotal || 0).toFixed(2)}
+            </strong>
+
           </div>
+
         `).join("");
 
         const statusClass = order.status.replaceAll(" ", "-");
 
         return `
+
           <article class="order-card">
 
             <div class="order-header">
+
               <div>
-                <p class="order-id">Order #${escapeHTML(order._id.slice(-8))}</p>
+
+                <p class="order-id">
+                  Order #${escapeHTML(order._id.slice(-8))}
+                </p>
+
                 <small>${orderDate}</small>
+
               </div>
 
               <span class="status ${statusClass}">
                 ${escapeHTML(order.status)}
               </span>
+
             </div>
+
 
             <div class="order-details">
 
               <div class="detail">
-                <p><strong>Customer:</strong> ${escapeHTML(order.customerName)}</p>
-                <p><strong>Phone:</strong> ${escapeHTML(order.phone)}</p>
+
+                <p>
+                  <strong>Customer:</strong>
+                  ${escapeHTML(order.customerName)}
+                </p>
+
+                <p>
+                  <strong>Phone:</strong>
+                  ${escapeHTML(order.phone)}
+                </p>
+
               </div>
 
+
               <div class="detail">
-                <p><strong>Address:</strong>
+
+                <p>
+                  <strong>Address:</strong>
                   ${escapeHTML(order.location?.address || "Not available")}
                 </p>
-                <p><strong>Distance:</strong>
+
+                <p>
+                  <strong>Distance:</strong>
                   ${Number(order.distanceKm || 0).toFixed(2)} KM
                 </p>
+
               </div>
+
 
               <div class="detail">
-                <p><strong>Note:</strong>
+
+                <p>
+                  <strong>Note:</strong>
                   ${escapeHTML(order.note || "No note")}
                 </p>
+
               </div>
 
             </div>
 
+
             <div class="items">
+
               <h4>Order Items</h4>
+
               ${itemsHTML}
+
             </div>
 
+
             <div class="order-total">
+
               Total: ₹${Number(order.total || 0).toFixed(2)}
+
             </div>
+
 
             ${
               order.status === "Pending"
                 ? `
+
                   <div class="actions">
+
                     <button
                       class="accept-btn"
                       onclick="updateStatus('${order._id}', 'Done')"
@@ -472,29 +831,48 @@
                     >
                       Reject
                     </button>
+
                   </div>
+
                 `
                 : ""
             }
 
+
           </article>
+
         `;
+
       }).join("");
+
     }
 
-    // Escape HTML
+
+    // =====================================
+    // ESCAPE HTML
+    // =====================================
+
     function escapeHTML(value) {
+
       return String(value ?? "").replace(/[&<>"']/g, char => ({
+
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#039;"
+
       })[char]);
+
     }
 
-    // Update order status
+
+    // =====================================
+    // UPDATE ORDER STATUS
+    // =====================================
+
     async function updateStatus(orderId, status) {
+
       const confirmed = confirm(
         `Are you sure you want to mark this order as ${status}?`
       );
@@ -502,21 +880,48 @@
       if (!confirmed) return;
 
       try {
+
         const response = await fetch(
           `${API_ORDERS}/${orderId}/status`,
           {
+
             method: "PATCH",
+
             headers: {
-              "Content-Type": "application/json"
+
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${adminToken}`
+
             },
+
             body: JSON.stringify({ status })
+
           }
         );
 
         const result = await response.json();
 
+        if (response.status === 401 || response.status === 403) {
+
+          adminToken = null;
+
+          $("otpPopup").style.display = "flex";
+
+          $("otpMessage").textContent =
+            "Session expired. Please verify OTP again.";
+
+          await sendOTP();
+
+          return;
+
+        }
+
         if (!response.ok || !result.success) {
-          throw new Error(result.message || "Status update failed");
+
+          throw new Error(
+            result.message || "Status update failed."
+          );
+
         }
 
         alert(result.message || `Order ${status} successfully`);
@@ -525,14 +930,24 @@
         await loadOrders($("orderDate").value);
 
       } catch (error) {
+
         console.error("Update Status Error:", error);
+
         alert(error.message || "Unable to update order status.");
+
       }
+
     }
 
-    // Status filter buttons
+
+    // =====================================
+    // STATUS FILTER
+    // =====================================
+
     document.querySelectorAll(".filter-btn").forEach(button => {
+
       button.addEventListener("click", () => {
+
         document.querySelectorAll(".filter-btn").forEach(btn => {
           btn.classList.remove("active");
         });
@@ -540,37 +955,68 @@
         button.classList.add("active");
 
         currentFilter = button.dataset.status;
+
         renderOrders();
+
       });
+
     });
 
-    // Search selected date
+
+    // =====================================
+    // SEARCH SELECTED DATE
+    // =====================================
+
     $("filterDate").addEventListener("click", () => {
+
       const date = $("orderDate").value;
 
       if (!date) {
+
         alert("Please select a date.");
+
         return;
+
       }
 
       loadOrders(date);
+
     });
 
-    // All dates - fetch all orders
+
+    // =====================================
+    // ALL DATES
+    // =====================================
+
     $("allDates").addEventListener("click", () => {
+
       $("orderDate").value = "";
+
       loadOrders();
+
     });
 
-    // Refresh current date filter
+
+    // =====================================
+    // REFRESH ORDERS
+    // =====================================
+
     $("refreshBtn").addEventListener("click", () => {
+
       loadOrders($("orderDate").value);
+
     });
 
-    // Initial load - all orders
-    loadOrders();
+
+    // =====================================
+    // INITIAL PAGE LOAD
+    // =====================================
+
+    // Automatically send OTP whenever admin.html opens
+    sendOTP();
 
   </script>
 
 </body>
+
 </html>

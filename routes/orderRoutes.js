@@ -4,15 +4,18 @@ import { createOrder,getAllOrders,
   updateOrderStatus
  } from "../controller/orderController.js";
 
+
+import { verifyAdmin } from "../middelware/adminAuth.js";
+
 const router = express.Router();
+
 
 router.post("/", createOrder);
 
 // Admin: Get all orders
-router.get("/", getAllOrders);
+router.get("/", verifyAdmin, getAllOrders);
 
-// Admin: Accept / Reject order
-router.patch("/:id/status", updateOrderStatus);
+router.patch("/:id/status", verifyAdmin, updateOrderStatus);
 
 
 export default router;

@@ -9,6 +9,10 @@ import menu from "./menu.js";
 dotenv.config();
 import { fileURLToPath } from 'url';
 
+import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
+import { randomInt } from "crypto";
+
 // const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -96,6 +100,133 @@ app.get('/', (req, res) => {
 app.use(express.static("public"));
 
 app.use("/api/orders", orderRoutes);
+
+
+
+
+const otpStore = new Map();
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: Number(process.env.SMTP_PORT) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// Send OTP
+app.post("/api/admin/send-otp", async (req, res) => {
+  try {
+    const email = process.env.ADMIN_EMAIL;
+
+    if (!email) {
+      return res.status(500).json({
+        success: false,
+        message: "Admin email is not configured."
+      });
+    }
+
+    const otp = randomInt(100000, 1000000).toString();
+
+    otpStore.set(email, {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      attempts: 0
+    });
+
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: "A-1 Frankie Admin OTP",
+      html: `
+        <h2>A-1 Frankie Admin Verification</h2>
+        <h1>${otp}</h1>
+        <p>Your OTP is valid for 5 minutes.</p>
+      `
+    });
+
+    return res.json({
+      success: true,
+      message: "OTP sent to admin email."
+    });
+
+  } catch (error) {
+    console.error("OTP Email Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send OTP."
+    });
+  }
+});
+
+// Verify OTP
+app.post("/api/admin/verify-otp", (req, res) => {
+  try {
+    const { otp } = req.body;
+    const email = process.env.ADMIN_EMAIL;
+    const savedOTP = otpStore.get(email);
+
+    if (!savedOTP) {
+      return res.status(400).json({
+        success: false,
+        message: "Please request a new OTP."
+      });
+    }
+
+    if (Date.now() > savedOTP.expiresAt) {
+      otpStore.delete(email);
+
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired. Request a new OTP."
+      });
+    }
+
+    if (savedOTP.attempts >= 5) {
+      otpStore.delete(email);
+
+      return res.status(429).json({
+        success: false,
+        message: "Too many attempts. Request a new OTP."
+      });
+    }
+
+    if (String(otp) !== savedOTP.otp) {
+      savedOTP.attempts++;
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP."
+      });
+    }
+
+    otpStore.delete(email);
+
+    const token = jwt.sign(
+      { role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "30m" }
+    );
+
+    return res.json({
+      success: true,
+      message: "OTP verified successfully.",
+      token
+    });
+
+  } catch (error) {
+    console.error("OTP Verify Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "OTP verification failed."
+    });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 console.log(PORT)
