@@ -173,3 +173,87 @@ export const createOrder = async (req, res) => {
         });
     }
 };
+
+
+
+export const getAllOrders = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    let filter = {};
+
+    // Date aayi hai toh sirf us date ke orders
+    if (date) {
+      const startDate = new Date(`${date}T00:00:00.000+05:30`);
+      const endDate = new Date(`${date}T23:59:59.999+05:30`);
+
+      filter.createdAt = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+
+    // Date nahi aayi toh all orders
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders
+    });
+
+  } catch (error) {
+    console.error("Get Orders Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch orders."
+    });
+  }
+};
+
+// PATCH: Accept or Reject order
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    if (!["Done", "Rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be Done or Rejected."
+      });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found."
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Order ${status} successfully.`,
+      data: order
+    });
+
+  } catch (error) {
+    console.error("Update Order Status Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update order status."
+    });
+  }
+};
