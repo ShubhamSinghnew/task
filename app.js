@@ -235,4 +235,13 @@ app.listen(PORT, () => {
 });
 
 
+
 // MONGO_URI = "mongodb+srv://singhshubham67867:Shub12345@cluster0.r2qhc.mongodb.net/"
+// ADMIN_EMAIL=9594892642saswat@gmail.com
+
+// SMTP_HOST=smtp.gmail.com
+// SMTP_PORT=465
+// SMTP_USER=singhshubham67867@gmail.com
+// SMTP_PASS=qyvz gfuv vsha mnpf
+
+// JWT_SECRET=jyytuyuvibonpmopioiyotyrutycuvibop-09080865678690-0o[llmnjbhjhjhdzdgxfhkljnlkml]
