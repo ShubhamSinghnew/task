@@ -6,8 +6,8 @@ import menu from "../menu.js";
 const SHOP_LOCATION = {
     //lat: 19.250565,
     //lng: 72.871483
-   lat: 19.250565,
-  lng: 72.871483
+   lat: 19.250311,
+  lng: 72.871831
 };
 
 
