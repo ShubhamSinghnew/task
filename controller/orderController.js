@@ -4,10 +4,10 @@ import menu from "../menu.js";
 
 // Shop location
 const SHOP_LOCATION = {
-    lat: 19.250565,
-    lng: 72.871483
-//    lat: 19.250565,
-//    lng: 72.871483
+    //lat: 19.250565,
+    //lng: 72.871483
+   lat: 19.250565,
+  lng: 72.871483
 };
 
 
